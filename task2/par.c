@@ -31,7 +31,8 @@ void wtime(double *t)
 
 void relax()
 {
-    for(i=1; i<=N-2; i++)
+    int i, j;
+	for(i=1; i<=N-2; i++)
         for(j=1; j<=N-2; j++)
         {
             U[i][j] = (U[i-1][j] + U[i+1][j])/2.;
@@ -41,8 +42,8 @@ void relax()
         {
             U[i][j] = (U[i][j-1] + U[i][j+1])/2.;
 			double e;
-			e = A[i][j];
-			eps = Max(eps, fabs(e - U[i][j]);
+			e = U[i][j];
+			eps = eps > fabs(e - U[i][j]) ? eps : fabs(e - U[i][i]);
         }
 }
 
@@ -50,8 +51,9 @@ void verify()
 { 
 	double s;
 	s = 0.;
-	for(i=0; i<=N-1; i++)
-		for(j=0; j<=N-1; j++)
+	int i, j;
+	for(i = 0; i <= N-1; i++)
+		for(j = 0; j <= N-1; j++)
 			{
 				s = s + U[i][j] * (i + 1) * (j + 1) / (N * N);
 			}
@@ -61,9 +63,6 @@ void verify()
 
 void init()
 {
-    proc_size = MPI_Group_size(MPI_COMM_WORLD, &proc_size);
-    proc_rank = MPI_Group_rank(MPI_COMM_WORLD, &proc_rank);
-	
 	int i, j;
     for(i=0; i<=N-1; i++)
         for(j=0; j<=N-1; j++)
@@ -79,17 +78,26 @@ void init()
 int main(int an, char **as)
 { 
 	int err = MPI_Init(&an, &as);
-	if (err)
+	if (err != MPI_SUCCESS)
 	{
-		printf("Error: MPI_Init. Aborting...");
+		fprintf(stderr, "Error: MPI_Init. Aborting...\n");
 		return 1;
 	}
-
-	wtime(&start);
-	int it;
+    MPI_Comm_size(MPI_COMM_WORLD, &proc_size);
+    MPI_Comm_rank(MPI_COMM_WORLD, &proc_rank);
+    //proc_size = MPI_Group_size(MPI_COMM_WORLD, &proc_size);
+    //proc_rank = MPI_Group_rank(MPI_COMM_WORLD, &proc_rank);
+	
+// we define process with rank 0 as the main one
     double start, fin;
+	if (proc_rank == 0)
+		wtime(&start);
+	int it;
     init();
-    for(it=1; it<=itmax; it++)
+
+	printf( "Hello world from process %d of %d\n", proc_rank, proc_size );
+    
+	for(it=1; it<=itmax; it++)
     {
         eps = 0.;
         relax();
@@ -97,14 +105,18 @@ int main(int an, char **as)
         printf( "it=%4i eps=%f\n", it,eps);
         if (eps < maxeps) break;
     }
-    wtime(&fin);
-    printf("Time in seconds=%gs\t", fin - start);
+	if (proc_rank == 0)
+    {
+		wtime(&fin);
+		printf("Time in seconds=%gs\t", fin - start);
+	}
     verify();
 	
 	err = MPI_Finalize();
 	if (err)
+	if (err != MPI_SUCCESS)
 	{
-		printf("Error: MPI_Finalize. Aborting...");
+		fprintf(stderr, "Error: MPI_Finalize. Aborting...\n");
 		return 2;
 	}
     return 0;
