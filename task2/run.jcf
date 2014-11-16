@@ -1,0 +1,10 @@
+
+#@ job_type = bluegene
+#@ class = large
+#@ wall_clock_limit = 00:05:00
+#@ initialdir = /gpfs/data/edu-vmk-stud14-521-07/
+#@ error = ok.$(jobid).err
+#@ output = ok.$(jobid).out
+#@ bg_size = 512
+#@ queue
+/bgsys/drivers/ppcfloor/bin/mpirun -np 512 -mapfile my.map -exe /gpfs/data/edu-vmk-stud14-521-07/par -args "512 0.01"
