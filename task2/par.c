@@ -5,12 +5,11 @@
 #include <math.h>
 
 #define Max(a,b) ((a)>(b)?(a):(b))
-#define PI 3.14159265
 
 double maxeps = 0.01;
 int N = 512;
 // spectral radius
-int itmax = 100000;
+int itmax = 10000;
 int proc_size;
 int proc_rank;
 int box_size_i;
@@ -45,28 +44,35 @@ void wtime(double *t)
 	*t = (tv.tv_sec - sec) + 1.0e-6*tv.tv_usec;
 }
 
+double loc_prev_om = 0;
 double omega(int n)
 {
-    double p = 1. - (PI / ((N - 1)))*(PI / ((N - 1))); 
+    double p = 1. - (M_PI / ((N - 1)))*(M_PI / ((N - 1))); 
+	double om;
 	if (n == 0)
-		return 0;
+		loc_prev_om = 0;
 	else if (n == 1)
 	{
-		return 1./(1. - p*p/2); 
+		loc_prev_om = 1./(1. - p*p/2); 
 	}
 	else
 	{
-		return 1./(1. - omega(n-1)*p*p/4); 
+		loc_prev_om = 1./(1. - loc_prev_om*p*p/4); 
 	}
+	if (proc_rank == 0)
+	{
+		//printf("Omega is %lf with n == %d, p is %lf\n", loc_prev_om, n, p);
+	}
+	return loc_prev_om;
 }
 void output(const char* name)
 {
 	// write matrix to file
 	FILE* grid = fopen(name, "w");
 	int i, j;
-	for (i = 0; i < N+2; i++)
+	for (i = 0; i < box_size_i+2; i++)
 	{
-		for (j = 0; j < N+2; j++)
+		for (j = 0; j < box_size_j+2; j++)
 		{
 			fprintf(grid, "%lf ", U[i][j]);
 		}
@@ -98,20 +104,25 @@ void init()
 			
 			if(tj == 0) 
             {    
-				U[i][j] = sin(PI * x / 2);
+				U[i][j] = sin(M_PI * x / 2);
             }
 			else if (tj == N + 1)
 			{
-				U[i][j] = sin(PI * x / 2) * exp(-PI/2);
+				U[i][j] = sin(M_PI * x / 2) * exp(-M_PI/2);
 			}
 			else if (ti == N + 1)
 			{
-				U[i][j] = exp(- PI * y / 2);
+				U[i][j] = exp(- M_PI * y / 2);
 			}
 			else 
 				U[i][j] = 0;
-				//U[i][j] = sin(PI * x / 2) * exp(-PI * y/2);
+				//U[i][j] = sin(M_PI * x / 2) * exp(-M_PI * y/2);
         }
+	/*
+	char out[19];
+	sprintf(out, "grid_init_%d.txt", proc_rank);
+	output(out);
+	*/
 }
 
 // parameter: iteration number
@@ -123,25 +134,26 @@ void relax(int iter)
 	MPI_Status status;
 	MPI_Request request;
 	
-	double loc_eps = 0.;
     int i, j;
-	double om = omega(iter);
-	// recieve
-	// Isend of the current iteration to the end of the cycle
+	// Recieve current iteration data from top and left processes
 	if (coords[0] - 1 >= 0) // top
 	{
 		int r_top, coords_top[2];
 		coords_top[0] = coords[0] - 1;
 		coords_top[1] = coords[1];
 		MPI_Cart_rank(topology, coords_top, &r_top);
-		//MPI_Isend(U[1] + 1, box_size_j, MPI_DOUBLE, r_top, 0,
-		  //           topology, &request);
-		MPI_Recv(U[0] + 1, box_size_j, MPI_DOUBLE, r_top, 0,
+		double* buf = (double*) malloc ((box_size_j+2) * sizeof(double));
+		MPI_Recv(buf, box_size_j+2, MPI_DOUBLE, r_top, 0,
 		             topology, &status);
 		int count;
 		MPI_Get_count (&status, MPI_DOUBLE, &count);
-		if (count != box_size_j)
+		if (count != box_size_j+2)
 			printf("Error while recieving from top\n");
+		for (i = 0; i < box_size_j+2; i++)
+		{
+			U[0][i] = buf[i];
+		}
+		free(buf);
 	}
 	
 	if (coords[1] - 1 >= 0) // left
@@ -150,23 +162,25 @@ void relax(int iter)
 		coords_left[0] = coords[0];
 		coords_left[1] = coords[1] - 1;
 		MPI_Cart_rank(topology, coords_left, &r_left);
-		double* buf = (double*) malloc (box_size_i * sizeof(double));
-		for (i = 1 ; i < box_size_i + 1; i++)
-			buf[i] = U[i][1];
-		//MPI_Isend(buf, box_size_i, MPI_DOUBLE, r_left, 0,
-		 //            topology, &request);
-		MPI_Recv(buf, box_size_i, MPI_DOUBLE, r_left, 0,
+		double* buf = (double*) malloc ((box_size_i+2) * sizeof(double));
+		MPI_Recv(buf, box_size_i+2, MPI_DOUBLE, r_left, 0,
 		             topology, &status);
-		for (i = 1 ; i < box_size_i + 1; i++)
+		for (i = 0 ; i < box_size_i + 2; i++)
+		{
 			U[i][0] = buf[i];
+		}
 		free(buf);
 		int count;
 		MPI_Get_count (&status, MPI_DOUBLE, &count);
-		if (count != box_size_i)
+		if (count != box_size_i+2)
 			printf("Error while recieving from left\n");
 	}
 	
 	// Me
+	double max_e = 0;
+	double loc_eps = 0.;
+	double om = omega(iter);
+	double loc_eps0 = 0., loc_eps1 = 0., loc_eps2 = 0., loc_eps3 = 0.;
 	for(i=1; i < box_size_i+1; i++)
         for(j=1; j< box_size_j+1; j++)
         {
@@ -174,21 +188,56 @@ void relax(int iter)
 			double e;
 			e = U[i][j];
             U[i][j] = om * U_dop + (1. - om) * U[i][j];
-			loc_eps = loc_eps > fabs(e - U[i][j]) ? loc_eps : fabs(e - U[i][i]);
-        }
-	//if (proc_rank == 6)
-    //   	printf( "Moment: it=%4i eps=%f\n", iter, loc_eps);
-	// send
+			if (fabs(e-U[i][j]) > loc_eps)
+				loc_eps = fabs(e-U[i][j]);
+		}
 	
-	// Isend of the current iteration to the end of the cycle
+	// Send new data to bottom and right processes
+	if (coords[0] + 1 <= (N / box_size_i) - 1) // bottom
+	{
+		int r_b, coords_b[2];
+		coords_b[0] = coords[0] + 1;
+		coords_b[1] = coords[1];
+		MPI_Cart_rank(topology, coords_b, &r_b);
+		double* buf = (double*) malloc ((box_size_j+2) * sizeof(double));
+		for (i = 0 ; i < box_size_j + 2; i++)
+		{
+			buf[i] = U[box_size_i][i];
+		}
+		MPI_Send(buf, box_size_j+2, MPI_DOUBLE, r_b, 0,
+		             topology);
+		free(buf);
+	}
+	
+	if (coords[1] + 1 <= (N / box_size_j) - 1) // right
+	{
+		int r_right, coords_r[2];
+		coords_r[0] = coords[0];
+		coords_r[1] = coords[1] + 1;
+		MPI_Cart_rank(topology, coords_r, &r_right);
+		double* buf = (double*) malloc ((box_size_i+2) * sizeof(double));
+		for (i = 0 ; i < box_size_i + 2; i++)
+			buf[i] = U[i][box_size_j];
+		MPI_Send(buf, box_size_i+2, MPI_DOUBLE, r_right, 0,
+		             topology);
+		free(buf);
+	}
+
+	// Send data to top and left processes for future use 
 	if (coords[0] - 1 >= 0) // top
 	{
 		int r_top, coords_top[2];
 		coords_top[0] = coords[0] - 1;
 		coords_top[1] = coords[1];
 		MPI_Cart_rank(topology, coords_top, &r_top);
-		MPI_Isend(U[1] + 1, box_size_j, MPI_DOUBLE, r_top, 0,
-		             topology, &request);
+		double* buf = (double*) malloc ((box_size_j+2) * sizeof(double));
+		for(j = 0; j < box_size_j + 2; j++)
+		{
+			buf[j] = U[1][j];
+		}
+		MPI_Send(buf, box_size_j+2, MPI_DOUBLE, r_top, 0,
+		             topology);
+		free(buf);
 	}
 	
 	if (coords[1] - 1 >= 0) // left
@@ -197,28 +246,35 @@ void relax(int iter)
 		coords_left[0] = coords[0];
 		coords_left[1] = coords[1] - 1;
 		MPI_Cart_rank(topology, coords_left, &r_left);
-		double* buf = (double*) malloc (box_size_i * sizeof(double));
-		for (i = 1 ; i < box_size_i + 1; i++)
+		double* buf = (double*) malloc ((box_size_i+2) * sizeof(double));
+		for (i = 0 ; i < box_size_i + 2; i++)
+		{
 			buf[i] = U[i][1];
-		MPI_Isend(buf, box_size_i, MPI_DOUBLE, r_left, 0,
-		             topology, &request);
+		}
+		MPI_Send(buf, box_size_i+2, MPI_DOUBLE, r_left, 0,
+		             topology);
+		free(buf);
 	}
 	
+	// Recieve data from right and bottom processes for future use
 	if (coords[0] + 1 <= N / box_size_i - 1) // bottom
 	{
 		int r_b, coords_b[2];
 		coords_b[0] = coords[0] + 1;
 		coords_b[1] = coords[1];
 		MPI_Cart_rank(topology, coords_b, &r_b);
-		MPI_Isend(U[box_size_i] + 1, box_size_j, MPI_DOUBLE, r_b, 0,
-		             topology, &request);
-		// last iterations data
-		MPI_Recv(U[box_size_i+1] + 1, box_size_j, MPI_DOUBLE, r_b, 0,
+		double* buf = (double*) malloc ((box_size_j+2) * sizeof(double));
+		MPI_Recv(buf, box_size_j+2, MPI_DOUBLE, r_b, 0,
 		             topology, &status);
+		for (i = 0 ; i < box_size_j + 2; i++)
+		{
+			U[box_size_i+1][i] = buf[i];
+		}
 		int count;
 		MPI_Get_count (&status, MPI_DOUBLE, &count);
-		if (count != box_size_j)
+		if (count != box_size_j+2)
 			printf("Error while recieving from bottom\n");
+		free(buf);
 	}
 	
 	if (coords[1] + 1 <= N / box_size_j - 1) // right
@@ -227,25 +283,28 @@ void relax(int iter)
 		coords_r[0] = coords[0];
 		coords_r[1] = coords[1] + 1;
 		MPI_Cart_rank(topology, coords_r, &r_right);
-		double* buf = (double*) malloc (box_size_i * sizeof(double));
-		for (i = 1 ; i < box_size_i + 1; i++)
-			buf[i] = U[i][box_size_j];
-		MPI_Isend(buf, box_size_i, MPI_DOUBLE, r_right, 0,
-		             topology, &request);
-		// previous iteration data
-		MPI_Recv(buf, box_size_i, MPI_DOUBLE, r_right, 0,
+		double* buf = (double*) malloc ((box_size_i+2) * sizeof(double));
+		MPI_Recv(buf, box_size_i+2, MPI_DOUBLE, r_right, 0,
 		             topology, &status);
-		for (i = 1 ; i < box_size_i + 1; i++)
+		for (i = 0 ; i < box_size_i + 2; i++)
 			U[i][box_size_j+1] = buf[i];
 		int count;
 		MPI_Get_count (&status, MPI_DOUBLE, &count);
-		if (count != box_size_i)
+		if (count != box_size_i+2)
 			printf("Error while recieving from right\n");
 		free(buf);
 	}
-	//eps = loc_eps;
-	//MPI_Barrier(topology);
 	MPI_Allreduce(&loc_eps, &eps, 1, MPI_DOUBLE, MPI_MAX, topology);
+	/*
+	printf("Proc %d, Iter %d, local eps %lf, eps %lf, max_e %lf\n", proc_rank, iter, loc_eps, eps, max_e);
+	if (proc_size == 1)
+	{
+		printf("Local eps 0 %lf\n", loc_eps0);
+		printf("Local eps 1 %lf\n", loc_eps1);
+		printf("Local eps 2 %lf\n", loc_eps2);
+		printf("Local eps 3 %lf\n", loc_eps3);
+	}
+	*/
 }
 
 void work()
@@ -264,10 +323,10 @@ void work()
 	if (proc_rank == 0)
 	{
 		//printf("Box size is %d x %d\n", box_size_j, box_size_i);
+		//printf( "Dimentions %d x %d\n", N/box_size_i, N/box_size_j );
 		printf("N is %d\n", N);
 		printf("Eps is %lf\n", maxeps);
 		printf("Proc is %d\n", proc_size);
-		//printf( "Dimentions %d x %d\n", N/box_size_i, N/box_size_j );
 	}
 
 	int dims[2], periods[2], reorder;
@@ -293,7 +352,8 @@ void work()
         it++;
 		eps = 0.;
         relax(it);
-//        	printf( "ALL: it=%4i eps=%f\n", it, eps);
+		//if (proc_rank == 0)
+		//	printf( "ALL: it=%4i eps=%f\n", it, eps);
         if (eps < maxeps || it > itmax) 
 		{
 			final_it = it;
@@ -301,9 +361,21 @@ void work()
 		}
     }
 	if (proc_rank == 0)
-		printf("Iterations: %d\n", final_it);
+	{
 		printf("Resulting eps: %lf\n", eps);
-
+		printf("Iterations: %d\n", final_it);
+	}
+	
+	/*
+	printf("Output %d\n", proc_rank);
+	int coords[2], r;
+    MPI_Comm_rank(topology, &r);
+	MPI_Cart_coords (topology, r, 2, coords);
+	printf("Coords %d x %d\n", coords[0], coords[1]);
+	char out[19];
+	sprintf(out, "grid_%d.txt", proc_rank);
+	output(out);
+	*/
 	//MPI_Gather(U, int sendcount, MPI_DOUBLE,
 	 //              void *recvbuf, (N+2)*(N+2), MPI_DOUBLE, 0, topology);
     //verify();
@@ -350,14 +422,6 @@ int main(int argc, char ** argv)
     {
 		wtime(&fin);
 		printf("Time in seconds=%gs\n", fin - start);
-		if (argc > 3)
-		{
-			//output(argv[3]);
-		}
-		else 
-		{
-			//output("grid.txt");
-		}
 	}
 
 	err = MPI_Finalize();

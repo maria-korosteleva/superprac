@@ -15,9 +15,10 @@ int proc_size;
 int proc_rank;
 int box_size_i;
 int box_size_j;
+int box_size_k;
 MPI_Comm topology;
 double eps;
-double** U = NULL;
+double*** U = NULL;
 void relax();
 void init();
 void verify();
@@ -27,13 +28,15 @@ void verify()
 { 
 	double s;
 	s = 0.;
-	int i, j;
+	int i, j, k;
 	for(i = 0; i < N+2; i++)
 		for(j = 0; j < N+2; j++)
+			for(k = 0; k < N+2; k++)
 			{
-				s = s + U[i][j] * (i + 1) * (j + 1) / (N * N);
+				s = s + U[i][j][k] * (i + 1) * (j + 1) * (k + 1) / (N * N * N);
 			}
-	printf(" S = %f\n",s);
+	if (proc_rank == 0)
+		printf(" S = %f\n",s);
 }
 void wtime(double *t)
 {
@@ -59,6 +62,8 @@ double omega(int n)
 		return 1./(1. - omega(n-1)*p*p/4); 
 	}
 }
+
+// Non-valid for 3D
 void output(const char* name)
 {
 	// write matrix to file
@@ -76,66 +81,80 @@ void output(const char* name)
 }
 void init()
 {
-	int coords[2], r;
+	int coords[3], r;
     MPI_Comm_rank(topology, &r);
-	MPI_Cart_coords (topology, r, 2, coords);
+	MPI_Cart_coords (topology, r, 3, coords);
 	//printf( "Hello world from process %d of %d\n", proc_rank, proc_size );
 	//printf( "Hello world from coords %d x %d\n", coords[0], coords[1]);
-	int i, j;
+	int i, j, k;
 	U = calloc(box_size_i + 2, sizeof(U[0]));
 	for (i = 0; i < box_size_i + 2; i++) 
 	{
 		U[i] = calloc(box_size_j + 2, sizeof(U[i][0]));
+		for (j = 0; j < box_size_j + 2; j++)
+		{
+			U[i][j] = calloc(box_size_k + 2, sizeof(U[i][j][0]));
+		}
 	}
     for(i=0; i< box_size_i+2; i++)
         for(j=0; j< box_size_j+2; j++)
-        { 
-			int ti = box_size_i*coords[0] + i;
-			int tj = box_size_j*coords[1] + j;
+        	for(k=0; k< box_size_k+2; k++)
+        	{ 
+				int ti = box_size_i*coords[0] + i;
+				int tj = box_size_j*coords[1] + j;
+				int tk = box_size_k*coords[2] + k;
+            
+				double x = ti * (1.0 / (N + 1));
+				double y = tj * (1.0 / (N + 1));
+				double z = tk * (1.0 / (N + 1));
+				
+				if (tk == N+1)
+				{
+					U[i][j][k] = (1 - abs(2*x-1)) * (1 - abs(2*y-1));
+				}
+				else 
+					U[i][j][k] = 0;
+			/*	
+				if(tj == 0) 
+                {    
+					U[i][j] = sin(PI * x / 2);
+                }
+				else if (tj == N + 1)
+				{
+					U[i][j] = sin(PI * x / 2) * exp(-PI/2);
+				}
+				else if (ti == N + 1)
+				{
+					U[i][j] = exp(- PI * y / 2);
+				}
+				else 
+					U[i][j] = 0;
+					//U[i][j] = sin(PI * x / 2) * exp(-PI * y/2);
+            */
+			}
 
-			double x = ti * (1.0 / (N + 1));
-			double y = tj * (1.0 / (N + 1));
-			
-			if(tj == 0) 
-            {    
-				U[i][j] = sin(PI * x / 2);
-            }
-			else if (tj == N + 1)
-			{
-				U[i][j] = sin(PI * x / 2) * exp(-PI/2);
-			}
-			else if (ti == N + 1)
-			{
-				U[i][j] = exp(- PI * y / 2);
-			}
-			else 
-				U[i][j] = 0;
-				//U[i][j] = sin(PI * x / 2) * exp(-PI * y/2);
-        }
 }
 
 // parameter: iteration number
 void relax(int iter)
 {
-	int coords[2], r;
+	int coords[3], r;
     MPI_Comm_rank(topology, &r);
-	MPI_Cart_coords (topology, r, 2, coords);
+	MPI_Cart_coords (topology, r, 3, coords);
 	MPI_Status status;
 	MPI_Request request;
 	
 	double loc_eps = 0.;
-    int i, j;
+    int i, j, k;
 	double om = omega(iter);
 	// recieve
-	// Isend of the current iteration to the end of the cycle
 	if (coords[0] - 1 >= 0) // top
 	{
-		int r_top, coords_top[2];
+		int r_top, coords_top[3];
 		coords_top[0] = coords[0] - 1;
 		coords_top[1] = coords[1];
+		coords_top[2] = coords[2];
 		MPI_Cart_rank(topology, coords_top, &r_top);
-		//MPI_Isend(U[1] + 1, box_size_j, MPI_DOUBLE, r_top, 0,
-		  //           topology, &request);
 		MPI_Recv(U[0] + 1, box_size_j, MPI_DOUBLE, r_top, 0,
 		             topology, &status);
 		int count;
@@ -169,18 +188,19 @@ void relax(int iter)
 	// Me
 	for(i=1; i < box_size_i+1; i++)
         for(j=1; j< box_size_j+1; j++)
+        	for(k=1; k< box_size_k+1; k++)
         {
-            double U_dop = (U[i-1][j] + U[i+1][j] + U[i][j-1] + U[i][j+1])/4.;
+            double U_dop = (U[i-1][j][k] + U[i+1][j][k] + U[i][j-1][k] + U[i][j+1][k] + U[i][j][k-1] + U[i][j][k+1])/4.;
 			double e;
-			e = U[i][j];
-            U[i][j] = om * U_dop + (1. - om) * U[i][j];
-			loc_eps = loc_eps > fabs(e - U[i][j]) ? loc_eps : fabs(e - U[i][i]);
+			e = U[i][j][k];
+            U[i][j][k] = om * U_dop + (1. - om) * U[i][j][k];
+			loc_eps = loc_eps > fabs(e - U[i][j][k]) ? loc_eps : fabs(e - U[i][i][k]);
         }
 	//if (proc_rank == 6)
     //   	printf( "Moment: it=%4i eps=%f\n", iter, loc_eps);
 	// send
 	
-	// Isend of the current iteration to the end of the cycle
+	// Send the current iteration to the end of the cycle
 	if (coords[0] - 1 >= 0) // top
 	{
 		int r_top, coords_top[2];
@@ -248,7 +268,7 @@ void relax(int iter)
 	MPI_Allreduce(&loc_eps, &eps, 1, MPI_DOUBLE, MPI_MAX, topology);
 }
 
-int work()
+void work()
 {
 	if ((int)sqrt(proc_size) == sqrt(proc_size))
 	{
@@ -261,21 +281,26 @@ int work()
 		box_size_i = box_size_j / 2;
 		
 	}
+	box_size_k = box_size_j; /// Need to do smt with this
 	if (proc_rank == 0)
 	{
-		printf("Box size is %d x %d\n", box_size_j, box_size_i);
+		printf( "Dimentions %d x %d x %d\n", N/box_size_i, N/box_size_j, N/box_size_k);
+		printf("Box size is %d x %d x %d\n", box_size_i, box_size_j, box_size_k);
 		printf("N is %d\n", N);
-		printf( "Dimentions %d x %d\n", N/box_size_i, N/box_size_j );
+		printf("Eps is %lf\n", maxeps);
+		printf("Proc is %d\n", proc_size);
 	}
 
-	int dims[2], periods[2], reorder;
+	int dims[3], periods[3], reorder;
 	dims[0] = N / box_size_i;
 	dims[1] = N / box_size_j;
+	dims[2] = N / box_size_k;
 	periods[0] = 0;
 	periods[1] = 0;
+	periods[2] = 0;
 	reorder = 1;
 
-	int err = MPI_Cart_create(MPI_COMM_WORLD, 2, dims, periods, reorder, &topology);
+	int err = MPI_Cart_create(MPI_COMM_WORLD, 3, dims, periods, reorder, &topology);
     if (topology == MPI_COMM_NULL)
 	{
 		printf("Error while creating Cart\n");
@@ -284,21 +309,25 @@ int work()
 	init();
 
     
-	int it, final_it;
-	for(it = 1; it < itmax; it++)
-    {
-        eps = 0.;
+	int it = 0;
+	int final_it = 0;
+    while(1)
+	{
+        it++;
+		eps = 0.;
         relax(it);
-   //     	printf( "ALL: it=%4i eps=%f\n", it, eps);
-        if (eps < maxeps) 
+//        	printf( "ALL: it=%4i eps=%f\n", it, eps);
+        if (eps < maxeps || it > itmax) 
 		{
 			final_it = it;
 			break;
 		}
     }
 	if (proc_rank == 0)
+	{
 		printf("Iterations: %d\n", final_it);
-
+		printf("Resulting eps: %lf\n", eps);
+	}
 	//MPI_Gather(U, int sendcount, MPI_DOUBLE,
 	 //              void *recvbuf, (N+2)*(N+2), MPI_DOUBLE, 0, topology);
     //verify();
@@ -362,9 +391,13 @@ int main(int argc, char ** argv)
 		fprintf(stdout, "Error: MPI_Finalize. Aborting...\n");
 		return 2;
 	}
-	int i;
+	int i, j;
 	for (i = 0; i < box_size_i + 2; ++i) 
 	{
+		for (j = 0; j < box_size_j + 2; ++j)
+		{
+			free(U[i][j]);
+		}
 		free(U[i]);
 	}
 	free(U);
