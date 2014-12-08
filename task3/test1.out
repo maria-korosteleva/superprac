@@ -1,0 +1,12 @@
+Box size is 128 x 128 x 128
+Dimentions 1 x 1 x 1
+N is 128
+Eps is 0.001000
+Proc is 1
+Hello world from process 0 of 1
+Hello world from coords 0 x 0 x 0
+ S = 0.000000
+Resulting eps: 0.000996
+Iterations: 147
+Time in seconds=36.1726s
+ S = 24395.307380

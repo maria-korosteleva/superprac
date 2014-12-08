@@ -1,0 +1,13 @@
+sqrt3 3.174802, 0.174802
+sqrt3 d 4.000000
+sqrt3 dd 5.039684
+sqrt3 dUU
+Box size is 32 x 32 x 64
+Dimentions 4 x 4 x 2
+N is 128
+Eps is 0.010000
+Proc is 32
+Resulting eps: 0.009244
+Iterations: 130
+Time in seconds=675.476s
+ S = 22296.417685

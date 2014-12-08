@@ -93,7 +93,7 @@ void init()
 	int i, j, k;
 	U = calloc(box_size_i + 2, sizeof(U[0]));
 
-	//#pragma omp parallel for schedule(guided) private(i,j) shared(U)
+	#pragma omp parallel for schedule(guided) private(i,j) shared(U)
 	for (i = 0; i < box_size_i + 2; i++) 
 	{
 		U[i] = calloc(box_size_j + 2, sizeof(U[i][0]));
@@ -478,15 +478,15 @@ void relax(int iter)
 	// Me
 	double loc_eps = 0.;
 	double om = omega(iter);
-	//#pragma omp parallel
-	//{
-	//	printf("Rank %d, Size %d, Threads %d\n", proc_rank, proc_size, omp_get_num_threads());
-	//}
+	#pragma omp parallel
+	{
+		printf("Rank %d, Size %d, Threads %d\n", proc_rank, proc_size, omp_get_num_threads());
+	}
 	
-	//#pragma omp parallel for ordered schedule(static, 1) private(i,j, k) shared(U)
+	#pragma omp parallel for ordered schedule(static, 1) private(i,j, k) shared(U)
 	for(i=1; i < box_size_i+1; i++)
 	{
-	//#pragma omp ordered
+	#pragma omp ordered
 		{
 		for(j=1; j< box_size_j+1; j++)
 			for(k=1; k< box_size_k+1; k++)

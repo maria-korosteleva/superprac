@@ -1,0 +1,8 @@
+Box size is 512 x 512 x 512
+Dimentions 1 x 1 x 1
+N is 512
+Eps is 0.010000
+Proc is 1
+Hello world from process 0 of 1
+Hello world from coords 0 x 0 x 0
+Ctrl-C caught... cleaning up processes

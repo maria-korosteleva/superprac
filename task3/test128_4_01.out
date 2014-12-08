@@ -1,0 +1,13 @@
+Box size is 64 x 64 x 128
+Dimentions 2 x 2 x 1
+N is 128
+Eps is 0.010000
+Proc is 4
+Resulting eps: 0.009893
+Iterations: 85
+Time in seconds=39.7363s
+Proc 0,  Sum = 2308.686580
+Proc 3,  Sum = 10517.387374
+Proc 2,  Sum = 4949.636380
+Proc 1,  Sum = 4949.636380
+ S = 22725.346713
