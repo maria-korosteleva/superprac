@@ -1,0 +1,8 @@
+N is 384
+Eps is 0.010000
+Proc is 1
+Treads are 1, 1
+Resulting eps: 0.009917
+Iterations: 257
+Time in seconds=2052.65s
+ S = 591024.942820

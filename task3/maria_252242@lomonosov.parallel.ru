@@ -6,9 +6,11 @@
 #include <omp.h>
 
 #define Max(a,b) ((a)>(b)?(a):(b))
+#define Min(a,b) ((a)<(b)?(a):(b))
 
 double maxeps = 0.01;
 int N = 512;
+int threads_num = 4;
 // spectral radius
 int itmax = 10000;
 int proc_size;
@@ -475,33 +477,54 @@ void relax(int iter)
 	if (coords[2] - 1 >= 0) // back
 		recv_back();
 
-	// Me
+	// ************************OMP SECTION***********************************
+	// diagonals of 2D side
+	// each diagonal can run in parallel, max threads_num blocks in parallel
+	int diag, block;
 	double loc_eps = 0.;
 	double om = omega(iter);
-	#pragma omp parallel
+	for(diag = 1; diag <= (2*threads_num-1); diag++)
 	{
-		printf("Rank %d, Size %d, Threads %d\n", proc_rank, proc_size, omp_get_num_threads());
-	}
-	
-	#pragma omp parallel for ordered schedule(static, 1) private(i,j, k) shared(U)
-	for(i=1; i < box_size_i+1; i++)
-	{
-	#pragma omp ordered
+		int diag_size = diag <= threads_num ? diag : 2*threads_num - diag;
+		//printf("Diagonal #%d, diag_size %d\n", diag, diag_size);
+		//printf("Block size %lf X %lf\n", (double)box_size_i/(double)threads_num , (double)box_size_j/(double)threads_num);
+		omp_set_num_threads(diag_size);
+		int bl_coords[2];
+#pragma omp parallel for schedule(static, 1) default(none) private(block, bl_coords, i, j, k) shared(U, loc_eps, om,  box_size_i, box_size_j, box_size_k, diag, threads_num, diag_size)  
+		for(block = 0; block < diag_size; block++)
 		{
-		for(j=1; j< box_size_j+1; j++)
-			for(k=1; k< box_size_k+1; k++)
+			//block = omp_get_thread_num();
+			// count the inside of the block on the current diagonal
+			bl_coords[0] = Min((diag-1), threads_num-1)- block;
+			bl_coords[1] = (diag-1) - bl_coords[0];
+			//printf("Thr %d, Block_coords %d X %d\n", block,  bl_coords[0], bl_coords[1]);
+			int ti, tj;
+			double loc_loc_eps = 0.;
+			for(ti=0; ti < box_size_i / threads_num; ti++)
+				for(tj=0; tj< box_size_j / threads_num; tj++)
+				{
+					i = bl_coords[0]*(box_size_i/threads_num) + ti + 1;
+					j = bl_coords[1]*(box_size_j/threads_num) + tj + 1;
+					for(k=1; k< box_size_k+1; k++)
+					{
+						double U_dop;
+						U_dop = (U[i-1][j][k] + U[i+1][j][k] + U[i][j-1][k] + U[i][j+1][k] + U[i][j][k-1] + U[i][j][k+1])/6.;
+						double e;
+						e = U[i][j][k];
+						U[i][j][k] = om * U_dop + (1. - om) * U[i][j][k];
+						if (fabs(e - U[i][j][k]) > loc_loc_eps)
+							loc_loc_eps = fabs(e - U[i][j][k]);
+					}
+				}
+			#pragma omp critical	
 			{
-			
-				double U_dop;
-				U_dop = (U[i-1][j][k] + U[i+1][j][k] + U[i][j-1][k] + U[i][j+1][k] + U[i][j][k-1] + U[i][j][k+1])/6.;
-				double e;
-				e = U[i][j][k];
-				U[i][j][k] = om * U_dop + (1. - om) * U[i][j][k];
-				if (fabs(e - U[i][j][k]) > loc_eps)
-					loc_eps = fabs(e - U[i][j][k]);
+				loc_eps = Max(loc_eps, loc_loc_eps);
 			}
 		}
+		#pragma omp barrier
 	}
+	// ***********************************************************************
+	
 	// Send new data to bottom, right and front processes
 	if (coords[0] + 1 <= (N / box_size_i) - 1) // bottom
 		send_bottom();
@@ -529,16 +552,6 @@ void relax(int iter)
 	//	eps from all procs
 	MPI_Allreduce(&loc_eps, &eps, 1, MPI_DOUBLE, MPI_MAX, topology);
 
-	/*
-	printf("Proc %d, Iter %d, local eps %lf, eps %lf, max_e %lf\n", proc_rank, iter, loc_eps, eps, max_e);
-	if (proc_size == 1)
-	{
-		printf("Local eps 0 %lf\n", loc_eps0);
-		printf("Local eps 1 %lf\n", loc_eps1);
-		printf("Local eps 2 %lf\n", loc_eps2);
-		printf("Local eps 3 %lf\n", loc_eps3);
-	}
-	*/
 }
 
 void work()
@@ -546,38 +559,20 @@ void work()
 	float float_size = pow(proc_size, 1./3.);
 	float float_size_double = pow(2 * proc_size, 1./3.);
 	float float_size_ddouble = pow(4 * proc_size, 1./3.);
-	//if (proc_rank == 0)
-	//{
-	//	printf("sqrt3 %lf, %lf\n", float_size, float_size - floor(float_size));
-	//	printf("sqrt3 d %lf\n", float_size_double);
-	//	printf("sqrt3 dd %lf\n", float_size_ddouble);
-	//}
 	if (float_size - floor(float_size) == 0)
 	{
-		//if (proc_rank == 0)
-		//{
-		//	printf("sqrt3 UUU\n");
-		//}
 		box_size_i = N / (int) float_size;
 		box_size_j = box_size_i;
 		box_size_k = box_size_i;
 	}
 	else if (float_size_double - floor(float_size_double) == 0)
 	{
-		//if (proc_rank == 0)
-		//{
-		//	printf("sqrt3 dUU\n");
-		//}
 		box_size_i = N / (int) float_size_double;
 		box_size_j = box_size_i;
 		box_size_k = box_size_i * 2;
 	}
 	else
 	{
-		//if (proc_rank == 0)
-		//{
-	//		printf("sqrt3 ddU\n");
-	//	}
 		box_size_i = N / (int) float_size_ddouble;
 		box_size_j = box_size_i * 2;
 		box_size_k = box_size_i * 2;
@@ -589,6 +584,10 @@ void work()
 		printf("N is %d\n", N);
 		printf("Eps is %lf\n", maxeps);
 		printf("Proc is %d\n", proc_size);
+	#pragma omp parallel
+		{
+			printf("Treads are %d, %d\n", omp_get_num_threads(), threads_num);
+		}
 	}
 
 	int dims[3], periods[3], reorder;
@@ -617,7 +616,7 @@ void work()
 		eps = 0.;
 		relax(it);
 		//if (proc_rank == 0)
-		//	printf( "ALL: it=%4i eps=%f\n", it, eps);
+		//printf( "ALL: it=%4i eps=%f\n", it, eps);
 		if (eps < maxeps || it > itmax) 
 		{
 			final_it = it;
@@ -629,20 +628,6 @@ void work()
 		printf("Resulting eps: %lf\n", eps);
 		printf("Iterations: %d\n", final_it);
 	}
-	
-	/*
-	printf("Output %d\n", proc_rank);
-	int coords[2], r;
-	MPI_Comm_rank(topology, &r);
-	MPI_Cart_coords (topology, r, 2, coords);
-	printf("Coords %d x %d\n", coords[0], coords[1]);
-	char out[19];
-	sprintf(out, "grid_%d.txt", proc_rank);
-	output(out);
-	*/
-	//MPI_Gather(U, int sendcount, MPI_DOUBLE,
-	 //			  void *recvbuf, (N+2)*(N+2), MPI_DOUBLE, 0, topology);
-	//verify();
 }
 
 
@@ -661,6 +646,10 @@ int main(int argc, char ** argv)
 	{
 		sscanf(argv[2], "%lf", &maxeps);
 	}
+	if (argc > 3)
+	{
+		sscanf(argv[3], "%d", &threads_num);
+	}
 	if (maxeps <= 0)
 	{
 		printf("Error: epsilon is too small\n");
@@ -675,6 +664,9 @@ int main(int argc, char ** argv)
 	}
 	MPI_Comm_size(MPI_COMM_WORLD, &proc_size);
 	MPI_Comm_rank(MPI_COMM_WORLD, &proc_rank);
+	// ************************OMP SECTION***********************************
+	omp_set_num_threads(threads_num);
+	// **********************************************************************
 	
 	double start, fin;
 	if (proc_rank == 0)

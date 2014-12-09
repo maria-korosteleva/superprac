@@ -1,0 +1,178 @@
+Treads are 1, 1
+N is 128
+Eps is 0.010000
+Proc is 1
+Threads: num 0, count 1, loc_loc_eps 0.965910
+ALL: it=   1 eps=0.965910
+Threads: num 0, count 1, loc_loc_eps 0.943985
+ALL: it=   2 eps=0.943985
+Threads: num 0, count 1, loc_loc_eps 0.922812
+ALL: it=   3 eps=0.922812
+Threads: num 0, count 1, loc_loc_eps 0.900654
+ALL: it=   4 eps=0.900654
+Threads: num 0, count 1, loc_loc_eps 0.877008
+ALL: it=   5 eps=0.877008
+Threads: num 0, count 1, loc_loc_eps 0.851754
+ALL: it=   6 eps=0.851754
+Threads: num 0, count 1, loc_loc_eps 0.824943
+ALL: it=   7 eps=0.824943
+Threads: num 0, count 1, loc_loc_eps 0.796714
+ALL: it=   8 eps=0.796714
+Threads: num 0, count 1, loc_loc_eps 0.767256
+ALL: it=   9 eps=0.767256
+Threads: num 0, count 1, loc_loc_eps 0.736787
+ALL: it=  10 eps=0.736787
+Threads: num 0, count 1, loc_loc_eps 0.705538
+ALL: it=  11 eps=0.705538
+Threads: num 0, count 1, loc_loc_eps 0.673747
+ALL: it=  12 eps=0.673747
+Threads: num 0, count 1, loc_loc_eps 0.641647
+ALL: it=  13 eps=0.641647
+Threads: num 0, count 1, loc_loc_eps 0.609464
+ALL: it=  14 eps=0.609464
+Threads: num 0, count 1, loc_loc_eps 0.577410
+ALL: it=  15 eps=0.577410
+Threads: num 0, count 1, loc_loc_eps 0.545681
+ALL: it=  16 eps=0.545681
+Threads: num 0, count 1, loc_loc_eps 0.514544
+ALL: it=  17 eps=0.514544
+Threads: num 0, count 1, loc_loc_eps 0.484096
+ALL: it=  18 eps=0.484096
+Threads: num 0, count 1, loc_loc_eps 0.454432
+ALL: it=  19 eps=0.454432
+Threads: num 0, count 1, loc_loc_eps 0.425670
+ALL: it=  20 eps=0.425670
+Threads: num 0, count 1, loc_loc_eps 0.397908
+ALL: it=  21 eps=0.397908
+Threads: num 0, count 1, loc_loc_eps 0.371224
+ALL: it=  22 eps=0.371224
+Threads: num 0, count 1, loc_loc_eps 0.345678
+ALL: it=  23 eps=0.345678
+Threads: num 0, count 1, loc_loc_eps 0.321312
+ALL: it=  24 eps=0.321312
+Threads: num 0, count 1, loc_loc_eps 0.298153
+ALL: it=  25 eps=0.298153
+Threads: num 0, count 1, loc_loc_eps 0.276212
+ALL: it=  26 eps=0.276212
+Threads: num 0, count 1, loc_loc_eps 0.255490
+ALL: it=  27 eps=0.255490
+Threads: num 0, count 1, loc_loc_eps 0.235976
+ALL: it=  28 eps=0.235976
+Threads: num 0, count 1, loc_loc_eps 0.217648
+ALL: it=  29 eps=0.217648
+Threads: num 0, count 1, loc_loc_eps 0.200479
+ALL: it=  30 eps=0.200479
+Threads: num 0, count 1, loc_loc_eps 0.184434
+ALL: it=  31 eps=0.184434
+Threads: num 0, count 1, loc_loc_eps 0.169512
+ALL: it=  32 eps=0.169512
+Threads: num 0, count 1, loc_loc_eps 0.155629
+ALL: it=  33 eps=0.155629
+Threads: num 0, count 1, loc_loc_eps 0.142731
+ALL: it=  34 eps=0.142731
+Threads: num 0, count 1, loc_loc_eps 0.130772
+ALL: it=  35 eps=0.130772
+Threads: num 0, count 1, loc_loc_eps 0.119703
+ALL: it=  36 eps=0.119703
+Threads: num 0, count 1, loc_loc_eps 0.109473
+ALL: it=  37 eps=0.109473
+Threads: num 0, count 1, loc_loc_eps 0.100034
+ALL: it=  38 eps=0.100034
+Threads: num 0, count 1, loc_loc_eps 0.091337
+ALL: it=  39 eps=0.091337
+Threads: num 0, count 1, loc_loc_eps 0.088196
+ALL: it=  40 eps=0.088196
+Threads: num 0, count 1, loc_loc_eps 0.085920
+ALL: it=  41 eps=0.085920
+Threads: num 0, count 1, loc_loc_eps 0.083602
+ALL: it=  42 eps=0.083602
+Threads: num 0, count 1, loc_loc_eps 0.081264
+ALL: it=  43 eps=0.081264
+Threads: num 0, count 1, loc_loc_eps 0.079061
+ALL: it=  44 eps=0.079061
+Threads: num 0, count 1, loc_loc_eps 0.076867
+ALL: it=  45 eps=0.076867
+Threads: num 0, count 1, loc_loc_eps 0.074603
+ALL: it=  46 eps=0.074603
+Threads: num 0, count 1, loc_loc_eps 0.072516
+ALL: it=  47 eps=0.072516
+Threads: num 0, count 1, loc_loc_eps 0.070314
+ALL: it=  48 eps=0.070314
+Threads: num 0, count 1, loc_loc_eps 0.068138
+ALL: it=  49 eps=0.068138
+Threads: num 0, count 1, loc_loc_eps 0.065954
+ALL: it=  50 eps=0.065954
+Threads: num 0, count 1, loc_loc_eps 0.063908
+ALL: it=  51 eps=0.063908
+Threads: num 0, count 1, loc_loc_eps 0.061735
+ALL: it=  52 eps=0.061735
+Threads: num 0, count 1, loc_loc_eps 0.059675
+ALL: it=  53 eps=0.059675
+Threads: num 0, count 1, loc_loc_eps 0.057557
+ALL: it=  54 eps=0.057557
+Threads: num 0, count 1, loc_loc_eps 0.055490
+ALL: it=  55 eps=0.055490
+Threads: num 0, count 1, loc_loc_eps 0.053402
+ALL: it=  56 eps=0.053402
+Threads: num 0, count 1, loc_loc_eps 0.051390
+ALL: it=  57 eps=0.051390
+Threads: num 0, count 1, loc_loc_eps 0.049339
+ALL: it=  58 eps=0.049339
+Threads: num 0, count 1, loc_loc_eps 0.047346
+ALL: it=  59 eps=0.047346
+Threads: num 0, count 1, loc_loc_eps 0.045352
+ALL: it=  60 eps=0.045352
+Threads: num 0, count 1, loc_loc_eps 0.043375
+ALL: it=  61 eps=0.043375
+Threads: num 0, count 1, loc_loc_eps 0.041444
+ALL: it=  62 eps=0.041444
+Threads: num 0, count 1, loc_loc_eps 0.039518
+ALL: it=  63 eps=0.039518
+Threads: num 0, count 1, loc_loc_eps 0.037656
+ALL: it=  64 eps=0.037656
+Threads: num 0, count 1, loc_loc_eps 0.035792
+ALL: it=  65 eps=0.035792
+Threads: num 0, count 1, loc_loc_eps 0.034013
+ALL: it=  66 eps=0.034013
+Threads: num 0, count 1, loc_loc_eps 0.032218
+ALL: it=  67 eps=0.032218
+Threads: num 0, count 1, loc_loc_eps 0.030535
+ALL: it=  68 eps=0.030535
+Threads: num 0, count 1, loc_loc_eps 0.028849
+ALL: it=  69 eps=0.028849
+Threads: num 0, count 1, loc_loc_eps 0.027244
+ALL: it=  70 eps=0.027244
+Threads: num 0, count 1, loc_loc_eps 0.025678
+ALL: it=  71 eps=0.025678
+Threads: num 0, count 1, loc_loc_eps 0.024168
+ALL: it=  72 eps=0.024168
+Threads: num 0, count 1, loc_loc_eps 0.022725
+ALL: it=  73 eps=0.022725
+Threads: num 0, count 1, loc_loc_eps 0.021324
+ALL: it=  74 eps=0.021324
+Threads: num 0, count 1, loc_loc_eps 0.020007
+ALL: it=  75 eps=0.020007
+Threads: num 0, count 1, loc_loc_eps 0.018718
+ALL: it=  76 eps=0.018718
+Threads: num 0, count 1, loc_loc_eps 0.017527
+ALL: it=  77 eps=0.017527
+Threads: num 0, count 1, loc_loc_eps 0.016368
+ALL: it=  78 eps=0.016368
+Threads: num 0, count 1, loc_loc_eps 0.015285
+ALL: it=  79 eps=0.015285
+Threads: num 0, count 1, loc_loc_eps 0.014250
+ALL: it=  80 eps=0.014250
+Threads: num 0, count 1, loc_loc_eps 0.013273
+ALL: it=  81 eps=0.013273
+Threads: num 0, count 1, loc_loc_eps 0.012355
+ALL: it=  82 eps=0.012355
+Threads: num 0, count 1, loc_loc_eps 0.011480
+ALL: it=  83 eps=0.011480
+Threads: num 0, count 1, loc_loc_eps 0.010671
+ALL: it=  84 eps=0.010671
+Threads: num 0, count 1, loc_loc_eps 0.009893
+ALL: it=  85 eps=0.009893
+Resulting eps: 0.009893
+Iterations: 85
+Time in seconds=30.8652s
+ S = 22725.346713
