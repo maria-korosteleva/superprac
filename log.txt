@@ -1,0 +1,48 @@
+mary@kali:~$ ssh -v -i .ssh/id_sp_rsa edu-vmk-stud14-521-07@regatta.hpc.cs.msu.su
+OpenSSH_6.0p1 Debian-4+deb7u2, OpenSSL 1.0.1e 11 Feb 2013
+debug1: Reading configuration data /etc/ssh/ssh_config
+debug1: /etc/ssh/ssh_config line 19: Applying options for *
+debug1: Connecting to regatta.hpc.cs.msu.su [188.44.42.27] port 22.
+debug1: Connection established.
+debug1: identity file .ssh/id_sp_rsa type 1
+debug1: Checking blacklist file /usr/share/ssh/blacklist.RSA-2048
+debug1: Checking blacklist file /etc/ssh/blacklist.RSA-2048
+debug1: identity file .ssh/id_sp_rsa-cert type -1
+debug1: Remote protocol version 2.0, remote software version OpenSSH_5.1
+debug1: match: OpenSSH_5.1 pat OpenSSH_5*
+debug1: Enabling compatibility mode for protocol 2.0
+debug1: Local version string SSH-2.0-OpenSSH_6.0p1 Debian-4+deb7u2
+debug1: SSH2_MSG_KEXINIT sent
+debug1: SSH2_MSG_KEXINIT received
+debug1: kex: server->client aes128-ctr hmac-md5 none
+debug1: kex: client->server aes128-ctr hmac-md5 none
+debug1: SSH2_MSG_KEX_DH_GEX_REQUEST(1024<1024<8192) sent
+debug1: expecting SSH2_MSG_KEX_DH_GEX_GROUP
+debug1: SSH2_MSG_KEX_DH_GEX_INIT sent
+debug1: expecting SSH2_MSG_KEX_DH_GEX_REPLY
+debug1: Server host key: RSA ac:7f:38:1c:4d:f1:ca:44:95:be:ac:d3:98:a1:50:f8
+debug1: Host 'regatta.hpc.cs.msu.su' is known and matches the RSA host key.
+debug1: Found key in /home/mary/.ssh/known_hosts:1
+debug1: ssh_rsa_verify: signature correct
+debug1: SSH2_MSG_NEWKEYS sent
+debug1: expecting SSH2_MSG_NEWKEYS
+debug1: SSH2_MSG_NEWKEYS received
+debug1: Roaming not allowed by server
+debug1: SSH2_MSG_SERVICE_REQUEST sent
+debug1: SSH2_MSG_SERVICE_ACCEPT received
+debug1: Authentications that can continue: publickey,password,keyboard-interactive
+debug1: Next authentication method: publickey
+debug1: Offering RSA public key: .ssh/id_sp_rsa
+debug1: Authentications that can continue: publickey,password,keyboard-interactive
+debug1: Next authentication method: keyboard-interactive
+Password: 
+debug1: Authentications that can continue: publickey,password,keyboard-interactive
+Password: 
+debug1: Authentications that can continue: publickey,password,keyboard-interactive
+Password: 
+debug1: Authentications that can continue: publickey,password,keyboard-interactive
+debug1: Next authentication method: password
+edu-vmk-stud14-521-07@regatta.hpc.cs.msu.su's password: 
+debug1: Authentications that can continue: publickey,password,keyboard-interactive
+Permission denied, please try again.
+edu-vmk-stud14-521-07@regatta.hpc.cs.msu.su's password: 
