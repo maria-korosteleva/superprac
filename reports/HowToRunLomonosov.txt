@@ -1,0 +1,35 @@
+Берешь логин с users.parallel.ru
+Доступ по ssh на lomonosov.parallel.ru
+Доступ как всегда по ключу
+Все, зашли
+Теперь вбиваем
+ssh compiler
+module load intel/13.1.0 impi/4.1.0
+Теперь заходим в папку ~/_scratch
+Кладем си-файл
+Компилим по-старинке
+Вот, теперь экзешник должен быть в ~/_scratch
+Запускаем: sbatch -n 256 -t 4:00 абсолютный_путь_к_экзешнику параметры_программы
+Через 100500 часов выходной файл появится в папке скратч
+Ой, я ошиблась
+Запускаем: sbatch -n 256 -t 4:00 impi абсолютный_путь_к_экзешнику параметры_программы
+Надо еще impi писать
+
+
+Произвольный маппинг на Bluegene:
+mpisubmit не умеет в маппинг.
+mpirun умеет, но запускать его на фронтенде не надо (и скорее всего не выйдет).
+решение есть здесь:
+http://hpc.cmc.msu.ru/node/200
+правда, на блюджине всё равно пришлось пару мест пофиксить, в итоге запускал
+llsubmit run.jcf
+, где run.jcf:
+#@ job_type = bluegene
+#@ class = large
+#@ wall_clock_limit = 00:05:00
+#@ initialdir = /gpfs/data/edu-vmk-stud14-520-01/Documents/task2
+#@ error = ok.$(jobid).err
+#@ output = ok.$(jobid).out
+#@ bg_size = 512
+#@ queue
+/bgsys/drivers/ppcfloor/bin/mpirun -np 512 -mapfile my.map -exe /gpfs/data/edu-vmk-stud14-520-01/Documents/task2/parallel -args "1024 0.01"
